@@ -34,10 +34,11 @@ $remapFlags = @(
 # Rust panic messages and object files can otherwise embed workstation paths.
 try {
     $env:CARGO_ENCODED_RUSTFLAGS = (@($flags | Where-Object { $_ }) + $remapFlags) -join $separator
-    cargo test --locked --release --lib --target $target --manifest-path $manifest
+    cargo test --locked --release --lib --features custom-protocol --target $target --manifest-path $manifest
     if ($LASTEXITCODE -ne 0) { throw 'Rust tests failed.' }
 
-    cargo build --locked --release --target $target --manifest-path $manifest
+    # Keep absolute symbol paths out of the MSVC CodeView record in the EXE.
+    cargo rustc --locked --release --bin PixelSoulStudio --features custom-protocol --target $target --manifest-path $manifest -- -C 'link-arg=/PDBALTPATH:PixelSoulStudio.pdb'
     if ($LASTEXITCODE -ne 0) { throw 'The portable executable failed to build.' }
 } finally {
     [Environment]::SetEnvironmentVariable('CARGO_ENCODED_RUSTFLAGS', $previousFlags)

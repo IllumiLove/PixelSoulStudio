@@ -56,6 +56,14 @@ fn decode_data_url(value: &str) -> Result<Vec<u8>, String> {
 
 fn process_image(options: &ProcessOptions) -> Result<Vec<u8>, String> {
     let input = fs::read(&options.input).map_err(|error| error.to_string())?;
+    let input = if matches!(image::guess_format(&input), Ok(ImageFormat::WebP)) {
+        let image = image::load_from_memory_with_format(&input, ImageFormat::WebP)
+            .map_err(|error| error.to_string())?
+            .into_rgba8();
+        encode_png(&image)?
+    } else {
+        input
+    };
     spritefusion_pixel_snapper::process_image_bytes(
         &input,
         Some(options.color_count.unwrap_or(16).clamp(2, 256) as u32),
@@ -508,7 +516,7 @@ mod tests {
     #[test]
     fn embedded_core_previews_and_scales_a_batch_image() {
         let directory = tempfile::tempdir().unwrap();
-        let input = directory.path().join("input.png");
+        let input = directory.path().join("input.webp");
         let output = directory.path().join("output.png");
         let image = RgbaImage::from_fn(12, 12, |x, y| {
             if (x / 3 + y / 3) % 2 == 0 {

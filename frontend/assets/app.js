@@ -10024,6 +10024,9 @@ function Kl({
   clearSelectionToken: ae = 0,
   onSelectionChange: xe,
   onImageFile: te,
+  onOpenImage,
+  openLabel,
+  emptyHint,
   enableViewLock: Z = !1,
   language: dropLanguage = "en",
 }) {
@@ -10047,7 +10050,7 @@ function Kl({
       dropLanguage === "zh-Hans"
         ? {
             title: h ? "松开以替换图片" : "拖放图片到这里",
-            help: "支持 PNG、JPG、WebP、BMP、GIF、TIFF，也可以按 Ctrl+V 粘贴",
+            help: "支持 PNG、JPG、WebP，也可以按 Ctrl+V 粘贴",
             editing: "正在编辑",
             baseLayer: "基础图层",
             layer: "图层",
@@ -10063,7 +10066,7 @@ function Kl({
         : dropLanguage === "zh-Hant"
           ? {
             title: h ? "放開以替換圖片" : "拖曳圖片到這裡",
-            help: "支援 PNG、JPG、WebP、BMP、GIF、TIFF，也可以使用 Ctrl+V 貼上",
+            help: "支援 PNG、JPG、WebP，也可以使用 Ctrl+V 貼上",
             editing: "正在編輯",
             baseLayer: "基礎圖層",
             layer: "圖層",
@@ -10079,7 +10082,7 @@ function Kl({
         : dropLanguage === "ja"
             ? {
               title: h ? "ドロップして画像を置換" : "画像をここにドロップ",
-              help: "PNG、JPG、WebP、BMP、GIF、TIFF。Ctrl+V 貼り付けにも対応",
+              help: "PNG、JPG、WebP。Ctrl+V 貼り付けにも対応",
               editing: "編集中",
               baseLayer: "ベースレイヤー",
               layer: "レイヤー",
@@ -10095,7 +10098,7 @@ function Kl({
           : dropLanguage === "ko"
               ? {
                 title: h ? "놓아서 이미지 교체" : "이미지를 여기에 끌어놓기",
-                help: "PNG, JPG, WebP, BMP, GIF, TIFF · Ctrl+V 붙여넣기도 가능",
+                help: "PNG, JPG, WebP · Ctrl+V 붙여넣기도 가능",
                 editing: "편집 중",
                 baseLayer: "기본 레이어",
                 layer: "레이어",
@@ -10110,7 +10113,7 @@ function Kl({
               }
               : {
                 title: h ? "Drop to replace image" : "Drop an image here",
-                help: "PNG, JPG, WebP, BMP, GIF or TIFF · Ctrl+V also works",
+                help: "PNG, JPG and WebP · Ctrl+V also works",
                 editing: "Editing",
                 baseLayer: "Base Layer",
                 layer: "Layer",
@@ -10438,17 +10441,14 @@ function Kl({
         className: "flex items-center bg-ui-panel px-3 text-xs text-ui-muted",
         children: [
           i.jsx("b", { children: C }),
-          i.jsxs("span", {
-            className:
-              "ml-2 rounded bg-ui-accent/20 px-2 py-0.5 text-[9px] text-ui-accent",
+          N && h && i.jsxs("span", {
+            className: "canvas-layer-label",
             children: [
               dropCopy.editing,
               ": ",
               q === "base"
                 ? dropCopy.baseLayer
-                : U.find((k) => k.id === q)?.id
-                  ? U.find((k) => k.id === q)?.id
-                  : dropCopy.layer,
+                : U.find((layer) => layer.id === q)?.name || dropCopy.layer,
             ],
           }),
           i.jsx("span", {
@@ -10489,6 +10489,7 @@ function Kl({
         onDoubleClick: qe,
         onPointerLeave: () => ie(null),
         onPointerDown: (k) => {
+          if (!h) return;
           (k.currentTarget.setPointerCapture(k.pointerId),
             (Se.current = { x: k.clientX, y: k.clientY }),
             k.button === 1 || (k.button === 0 && (!N || u === "pan"))
@@ -10524,22 +10525,25 @@ function Kl({
           (E(!1), (Fe.current = !1), k && me?.());
         },
         children: [
-          !h &&
-            te &&
-            i.jsxs("div", {
-              className: "canvas-drop-empty",
-              children: [
-                i.jsx("div", {
-                  className: "canvas-drop-icon",
-                  children: i.jsx(cl, { size: 26 }),
-                }),
-                i.jsx("strong", { children: dropCopy.title }),
-                i.jsx("span", { children: dropCopy.help }),
-              ],
-            }),
           i.jsx("canvas", {
             ref: se,
             className: `absolute inset-0 ${p ? "cursor-grabbing" : N && u === "object" ? "cursor-default" : N && u !== "pan" ? "cursor-none" : "cursor-grab"}`,
+          }),
+          !h && (te || emptyHint) && i.jsxs("div", {
+            className: te ? "canvas-drop-empty canvas-empty" : "canvas-empty canvas-awaiting",
+            children: [
+              te && i.jsx("div", {
+                className: "canvas-drop-icon",
+                children: i.jsx(cl, { size: 24, "aria-hidden": true }),
+              }),
+              te && i.jsx("strong", { children: dropCopy.title }),
+              i.jsx("span", { children: te ? dropCopy.help : emptyHint }),
+              onOpenImage && i.jsx("button", {
+                className: "btn primary canvas-import",
+                onClick: onOpenImage,
+                children: openLabel,
+              }),
+            ],
           }),
           dropActive &&
             te &&
@@ -10554,7 +10558,7 @@ function Kl({
                 i.jsx("span", { children: dropCopy.help }),
               ],
             }),
-          i.jsxs("div", {
+          h && i.jsxs("div", {
             className:
               "canvas-view-controls absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-lg border border-ui-line bg-ui-panel p-1 shadow-xl",
             onPointerDown: (k) => k.stopPropagation(),
@@ -11748,16 +11752,44 @@ function lp({ language: h, onMessage: C }) {
   return i.jsxs(i.Fragment, {
     children: [
       i.jsxs("div", {
-        className: "grid h-full min-h-0 grid-cols-[1fr_330px] gap-3",
+        className: "converter-layout",
         children: [
           i.jsxs("div", {
-            className: "grid min-h-0 grid-cols-2 gap-3",
+            className: `converter-actions ${D || U ? "" : "converter-actions-empty"}`,
+            children: [
+              i.jsx("input", {
+                ref: N, className: "hidden", type: "file", accept: "image/*",
+                onChange: (event) => {
+                  const file = event.target.files?.[0];
+                  if (file) Ge(file);
+                  event.target.value = "";
+                },
+              }),
+              D && i.jsxs("button", {
+                className: "btn", onClick: () => N.current?.click(),
+                children: [i.jsx(cl, { size: 16, "aria-hidden": true }), Cc[h].replaceImage],
+              }),
+              U && i.jsx("button", {
+                className: "tool studio-icon-action", title: o.copy, "aria-label": o.copy,
+                onClick: We, children: i.jsx(Pc, { size: 16, "aria-hidden": true }),
+              }),
+              U && i.jsxs("button", {
+                className: "btn primary", onClick: () => { at(1); oe(true); },
+                children: [i.jsx(ta, { size: 16, "aria-hidden": true }), Cc[h].exportImage],
+              }),
+            ],
+          }),
+          i.jsxs("div", {
+            className: "studio-canvases",
             children: [
               i.jsx(Kl, {
                 documentId: `pixel-converter-original:${X}:${D.length}`,
                 src: D,
                 title: o.original,
                 onImageFile: Ge,
+                onOpenImage: () => N.current?.click(),
+                openLabel: Cc[h].openImage,
+                language: h,
               }),
               i.jsx("div", {
                 ref: be,
@@ -11770,6 +11802,8 @@ function lp({ language: h, onMessage: C }) {
                   documentId: `pixel-converter-result:${X}`,
                   src: U,
                   title: o.processed,
+                  emptyHint: Cc[h].importFirst,
+                  language: h,
                   enableViewLock: !0,
                 }),
               }),
@@ -11778,29 +11812,9 @@ function lp({ language: h, onMessage: C }) {
             ],
           }),
           i.jsxs("div", {
-            className:
-              "stone-scrollbar overflow-auto border-l border-ui-line bg-ui-panel px-4 pb-5",
+            className: "studio-inspector converter-options",
             children: [
-              i.jsx("b", {
-                className: "sticky top-0 z-10 block bg-ui-panel py-4",
-                children: o.title,
-              }),
-              i.jsx("p", { className: "subtle", children: o.hint }),
-              i.jsxs("button", {
-                className: "btn mt-4 w-full",
-                onClick: () => N.current?.click(),
-                children: [
-                  i.jsx(cl, { className: "mr-2 inline", size: 15 }),
-                  o.choose,
-                ],
-              }),
-              i.jsx("input", {
-                ref: N,
-                className: "hidden",
-                type: "file",
-                accept: "image/*",
-                onChange: (P) => P.target.files?.[0] && Ge(P.target.files[0]),
-              }),
+              i.jsx("h2", { children: o.title }),
               i.jsx("label", { className: "label", children: o.source }),
               i.jsxs("select", {
                 className: "field",
@@ -12083,26 +12097,6 @@ function lp({ language: h, onMessage: C }) {
                   o.reset,
                 ],
               }),
-              i.jsxs("button", {
-                className: "btn primary mt-2 w-full",
-                disabled: !L,
-                onClick: () => {
-                  (at(4), oe(!0));
-                },
-                children: [
-                  i.jsx(ta, { className: "mr-2 inline", size: 15 }),
-                  o.save,
-                ],
-              }),
-              i.jsxs("button", {
-                className: "btn mt-2 w-full",
-                disabled: !L,
-                onClick: We,
-                children: [
-                  i.jsx(Pc, { className: "mr-2 inline", size: 15 }),
-                  o.copy,
-                ],
-              }),
             ],
           }),
         ],
@@ -12203,6 +12197,39 @@ const Os = {
   },
   Cc = {
     en: {
+      pixelAuto: "Auto",
+      pixelManual: "Manual",
+      refreshPreview: "Settings changed. Generate the preview again.",
+      pixelize: "Pixelize",
+      edit: "Pixel Editor",
+      batchTab: "Batch",
+      convert: "Resize & convert",
+      workspaceHelp: "Open an image, compare the result, then edit or export it.",
+      editorHelp: "Draw, remove backgrounds, and work with layers.",
+      batchFlowHelp: "Process a folder with the same settings.",
+      converterHelp: "Choose a size, palette, and fit mode. The preview updates automatically.",
+      replaceImage: "Replace image",
+      openImage: "Open image",
+      exportImage: "Export PNG",
+      copyResult: "Copy result",
+      editResult: "Edit result",
+      emptyResult: "Generate a preview to see the processed image here.",
+      pixelSettings: "Pixel settings",
+      advancedOutput: "Advanced output",
+      defaultExportPath: "Default export path",
+      batchImages: "Images in folder",
+      sourceFolder: "Source folder",
+      destinationFolder: "Destination folder",
+      undoAction: "Undo",
+      redoAction: "Redo",
+      mergeLayers: "Merge visible layers",
+      replaceEditorConfirm: "Replace the current editor image and its unsaved edits?",
+      settingsTab: "Settings",
+      importFirst: "Import an image first.",
+      previewFirst: "Generate a preview first.",
+      openAction: "Open",
+      layersApplied: "Applied visible layers",
+      noUnsavedEdits: "No changes to save",
       workspace: "Workspace",
       editor: "Pixel Editor",
       batch: "Batch Processing",
@@ -12346,6 +12373,39 @@ const Os = {
       batchComplete: "Batch processing complete",
     },
     "zh-Hans": {
+      pixelAuto: "自动",
+      pixelManual: "手动",
+      refreshPreview: "设置已更改，请重新生成预览。",
+      pixelize: "像素化",
+      edit: "像素编辑",
+      batchTab: "批量处理",
+      convert: "尺寸与色彩转换",
+      workspaceHelp: "导入图片、对照处理结果，再编辑或导出。",
+      editorHelp: "绘制像素、移除背景，或编辑图层。",
+      batchFlowHelp: "用相同设置处理一个文件夹的图片。",
+      converterHelp: "调整尺寸、调色盘与适配方式，预览会自动更新。",
+      replaceImage: "替换图片",
+      openImage: "打开图片",
+      exportImage: "导出 PNG",
+      copyResult: "复制结果",
+      editResult: "编辑结果",
+      emptyResult: "生成预览后，处理结果会显示在这里。",
+      pixelSettings: "像素化设置",
+      advancedOutput: "高级输出设置",
+      defaultExportPath: "默认导出路径",
+      batchImages: "文件夹内的图片",
+      sourceFolder: "来源文件夹",
+      destinationFolder: "输出文件夹",
+      undoAction: "撤销",
+      redoAction: "重做",
+      mergeLayers: "合并可见图层",
+      replaceEditorConfirm: "替换编辑器当前图片并放弃尚未保存的编辑？",
+      settingsTab: "设置",
+      importFirst: "请先导入图片。",
+      previewFirst: "请先生成预览。",
+      openAction: "打开",
+      layersApplied: "已应用可见图层",
+      noUnsavedEdits: "没有待保存的修改",
       workspace: "工作区",
       editor: "像素编辑器",
       batch: "批量处理",
@@ -12483,6 +12543,39 @@ const Os = {
       batchComplete: "批处理完成",
     },
     "zh-Hant": {
+      pixelAuto: "自動",
+      pixelManual: "手動",
+      refreshPreview: "設定已變更，請重新生成預覽。",
+      pixelize: "像素化",
+      edit: "像素編輯",
+      batchTab: "批次處理",
+      convert: "尺寸與色彩轉換",
+      workspaceHelp: "匯入圖片、對照處理結果，再編輯或匯出。",
+      editorHelp: "繪製像素、移除背景，或編輯圖層。",
+      batchFlowHelp: "用相同設定處理一個資料夾的圖片。",
+      converterHelp: "調整尺寸、調色盤與適配方式，預覽會自動更新。",
+      replaceImage: "替換圖片",
+      openImage: "開啟圖片",
+      exportImage: "匯出 PNG",
+      copyResult: "複製結果",
+      editResult: "編輯結果",
+      emptyResult: "生成預覽後，處理結果會顯示在這裡。",
+      pixelSettings: "像素化設定",
+      advancedOutput: "進階輸出設定",
+      defaultExportPath: "預設匯出路徑",
+      batchImages: "資料夾內的圖片",
+      sourceFolder: "來源資料夾",
+      destinationFolder: "輸出資料夾",
+      undoAction: "復原",
+      redoAction: "重做",
+      mergeLayers: "合併可見圖層",
+      replaceEditorConfirm: "替換編輯器目前圖片並放棄尚未儲存的編輯？",
+      settingsTab: "設定",
+      importFirst: "請先匯入圖片。",
+      previewFirst: "請先生成預覽。",
+      openAction: "開啟",
+      layersApplied: "已套用可見圖層",
+      noUnsavedEdits: "沒有待儲存的修改",
       workspace: "工作區",
       editor: "像素編輯器",
       batch: "批次處理",
@@ -12620,6 +12713,39 @@ const Os = {
       batchComplete: "批處理完成",
     },
     ko: {
+      pixelAuto: "자동",
+      pixelManual: "수동",
+      refreshPreview: "설정이 변경되었습니다. 미리보기를 다시 생성하세요.",
+      pixelize: "픽셀화",
+      edit: "픽셀 편집",
+      batchTab: "일괄 처리",
+      convert: "크기 및 색상 변환",
+      workspaceHelp: "이미지를 가져와 결과를 비교한 후 편집하거나 내보내세요.",
+      editorHelp: "픽셀을 그리고 배경을 제거하거나 레이어를 편집하세요.",
+      batchFlowHelp: "한 폴더의 이미지를 동일한 설정으로 처리합니다.",
+      converterHelp: "크기와 팔레트를 바꾸면 미리보기가 자동으로 업데이트됩니다.",
+      replaceImage: "이미지 교체",
+      openImage: "이미지 열기",
+      exportImage: "PNG 내보내기",
+      copyResult: "결과 복사",
+      editResult: "결과 편집",
+      emptyResult: "미리보기를 생성하면 결과가 여기에 표시됩니다.",
+      pixelSettings: "픽셀화 설정",
+      advancedOutput: "고급 출력 설정",
+      defaultExportPath: "기본 내보내기 경로",
+      batchImages: "폴더의 이미지",
+      sourceFolder: "원본 폴더",
+      destinationFolder: "출력 폴더",
+      undoAction: "실행 취소",
+      redoAction: "다시 실행",
+      mergeLayers: "보이는 레이어 병합",
+      replaceEditorConfirm: "현재 이미지와 저장하지 않은 편집을 교체하시겠습니까?",
+      settingsTab: "설정",
+      importFirst: "먼저 이미지를 가져오세요.",
+      previewFirst: "먼저 미리보기를 생성하세요.",
+      openAction: "열기",
+      layersApplied: "보이는 레이어를 적용했습니다",
+      noUnsavedEdits: "저장할 변경 사항 없음",
       workspace: "작업 공간",
       editor: "픽셀 편집기",
       batch: "일괄 처리",
@@ -12758,6 +12884,39 @@ const Os = {
       batchComplete: "일괄 처리 완료",
     },
     ja: {
+      pixelAuto: "自動",
+      pixelManual: "手動",
+      refreshPreview: "設定が変更されました。プレビューを作り直してください。",
+      pixelize: "ピクセル化",
+      edit: "ピクセル編集",
+      batchTab: "一括処理",
+      convert: "サイズ・色変換",
+      workspaceHelp: "画像を読み込んで結果を比較し、編集または書き出します。",
+      editorHelp: "ピクセルの描画、背景の除去、レイヤーの編集ができます。",
+      batchFlowHelp: "フォルダー内の画像を同じ設定で処理します。",
+      converterHelp: "サイズや配色を変更するとプレビューが自動で更新されます。",
+      replaceImage: "画像を置換",
+      openImage: "画像を開く",
+      exportImage: "PNGを書き出す",
+      copyResult: "結果をコピー",
+      editResult: "結果を編集",
+      emptyResult: "プレビューを作成すると結果がここに表示されます。",
+      pixelSettings: "ピクセル化の設定",
+      advancedOutput: "詳細な出力設定",
+      defaultExportPath: "既定の書き出し先",
+      batchImages: "フォルダー内の画像",
+      sourceFolder: "入力フォルダー",
+      destinationFolder: "出力フォルダー",
+      undoAction: "元に戻す",
+      redoAction: "やり直す",
+      mergeLayers: "表示レイヤーを結合",
+      replaceEditorConfirm: "編集中の画像を置き換えて、未保存の変更を破棄しますか？",
+      settingsTab: "設定",
+      importFirst: "先に画像を読み込んでください。",
+      previewFirst: "先にプレビューを作成してください。",
+      openAction: "開く",
+      layersApplied: "表示レイヤーを適用しました",
+      noUnsavedEdits: "保存する変更はありません",
       workspace: "ワークスペース",
       editor: "ピクセルエディター",
       batch: "バッチ処理",
@@ -12914,16 +13073,33 @@ function ThirdPartyNotices({ language }) {
   });
 }
 
+function fileDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 function PixelSoulStudio() {
   const [h, C] = g.useState("Workspace"),
     [o, N] = g.useState(
       () => {
         const savedLanguage = localStorage.getItem("pixel-soul-language");
-        return savedLanguage === "zh" ? "zh-Hant" : savedLanguage || "en";
+        if (savedLanguage === "zh") return "zh-Hant";
+        if (Object.hasOwn(Os, savedLanguage)) return savedLanguage;
+        const locale = navigator.language;
+        if (/^zh-(TW|HK|MO|Hant)/i.test(locale)) return "zh-Hant";
+        if (/^zh/i.test(locale)) return "zh-Hans";
+        return /^(ko|ja)/.test(locale) ? locale.slice(0, 2) : "en";
       },
     ),
     u = (d) => Cc[o][d] || Cc.en[d] || d,
     [z, L] = g.useState(""),
+    [sourceName, setSourceName] = g.useState(""),
+    [batchFiles, setBatchFiles] = g.useState([]),
+    [previewOptions, setPreviewOptions] = g.useState(""),
     [_, D] = g.useState(""),
     [F, U] = g.useState(""),
     [q, X] = g.useState(""),
@@ -12955,6 +13131,8 @@ function PixelSoulStudio() {
     [pt, rt] = g.useState(0),
     [Ie, We] = g.useState(!1),
     [ct, Kt] = g.useState(!1),
+    [workspaceDirty, setWorkspaceDirty] = g.useState(false),
+    importPending = g.useRef(false),
     [P, B] = g.useState("Engine ready"),
     [ge, Ne] = g.useState([]),
     [je, _e] = g.useState([]),
@@ -12972,6 +13150,8 @@ function PixelSoulStudio() {
     Ln = "pixel-soul-app-preferences-v2",
     gr = g.useRef(!1),
     [ln, Hn] = g.useState("workspace");
+  const pixelOptions = JSON.stringify([oe, at, jt, V, ce, Ze, Bt, $, ke, Ge]);
+  const previewNeedsRefresh = Boolean(se && previewOptions !== pixelOptions);
   (g.useEffect(() => {
     try {
       const d = JSON.parse(localStorage.getItem(Ln) || "{}");
@@ -13039,13 +13219,13 @@ function PixelSoulStudio() {
   }
   (g.useEffect(() => {
     const d = (b) => {
-      ct && (b.preventDefault(), (b.returnValue = ""));
+      (ct || workspaceDirty) && (b.preventDefault(), (b.returnValue = ""));
     };
     return (
       window.addEventListener("beforeunload", d),
       () => window.removeEventListener("beforeunload", d)
     );
-  }, [ct]),
+  }, [ct, workspaceDirty]),
     g.useEffect(() => {
       (localStorage.setItem("pixel-soul-language", o),
         (document.documentElement.lang = o));
@@ -13076,43 +13256,74 @@ function PixelSoulStudio() {
         () => window.removeEventListener("keydown", d)
       );
     }, [h, ge, je, Be, Fe]));
-  async function yr() {
-    const d = h === "Batch Processing",
-      b = await ea({
-        directory: d,
-        multiple: !1,
-        filters: d
-          ? void 0
-          : [
-              {
-                name: "Images",
-                extensions: [
-                  "png",
-                  "jpg",
-                  "jpeg",
-                  "webp",
-                  "bmp",
-                  "tif",
-                  "tiff",
-                  "gif",
-                ],
-              },
-            ],
-      });
-    if (typeof b == "string") {
-      if (d) {
-        (U(b), te(!1), y(0), ae(0), X(`${b}output`), B(u("batchSelected")));
-        return;
-      }
-      (L(b),
-        ne(await Ae("read_image", { path: b })),
-        D(b.replace(/\.[^.]+$/, "_snapped.png")),
-        B(u("imageSelected")));
+  const imagePicker = {
+    multiple: false,
+    filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "webp", "bmp", "gif"] }],
+  };
+  const workspaceImagePicker = {
+    ...imagePicker,
+    filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "webp"] }],
+  };
+
+  function loadWorkspaceImage(path, dataUrl, name, exportPath) {
+    L(path);
+    ne(dataUrl);
+    de("");
+    D(exportPath);
+    setSourceName(name);
+    setWorkspaceDirty(false);
+    B(u("imageSelected"));
+  }
+
+  async function openWorkspaceImage() {
+    if (Ie || importPending.current) return;
+    importPending.current = true;
+    try {
+      const path = await ea(workspaceImagePicker);
+      if (typeof path !== "string") return;
+      const name = path.split(/[\\/]/).at(-1);
+      const dataUrl = await Ae("read_image", { path });
+      const exportPath = path.slice(0, -name.length) + name.replace(/\.[^.]+$/, "") + "_snapped.png";
+      loadWorkspaceImage(path, dataUrl, name, exportPath);
+    } catch (error) {
+      Je(String(error));
+    } finally {
+      importPending.current = false;
     }
   }
+
+  async function yr() {
+    if (Ie || importPending.current) return;
+    importPending.current = true;
+    try {
+      const folder = await ea({ directory: true, multiple: false });
+      if (typeof folder !== "string") return;
+      const files = await Ae("list_batch_images", { path: folder });
+      U(folder);
+      setBatchFiles(files);
+      te(false);
+      y(0);
+      ae(0);
+      const separator = folder.includes("\\") ? "\\" : "/";
+      X(`${folder}${folder.endsWith(separator) ? "" : separator}output`);
+      B(u("batchSelected"));
+    } catch (error) {
+      Je(String(error));
+    } finally {
+      importPending.current = false;
+    }
+  }
+
   async function Dr() {
-    const d = await ea({ directory: !0, multiple: !1 });
-    typeof d == "string" && (X(d), te(!1), B(u("batchOutputSelected")));
+    try {
+      const folder = await ea({ directory: true, multiple: false });
+      if (typeof folder !== "string") return;
+      X(folder);
+      te(false);
+      B(u("batchOutputSelected"));
+    } catch (error) {
+      Je(String(error));
+    }
   }
   async function Tr() {
     q && (await Ae("open_folder", { path: q }));
@@ -13127,11 +13338,13 @@ function PixelSoulStudio() {
     });
   }
   async function wn() {
-    if (h === "Batch Processing" ? !F : !z) return Je("Choose input first");
+    if (Ie || importPending.current) return;
+    if (h === "Batch Processing" ? !F || !q : !z) return Je(u("importFirst"));
     We(!0);
     try {
       if (h === "Batch Processing") {
         const d = await Ae("list_batch_images", { path: F });
+        setBatchFiles(d);
         if (!d.length) {
           Je(u("noImagesFound"));
           return;
@@ -13199,7 +13412,7 @@ function PixelSoulStudio() {
                 options: { width: Bt, height: $, anchor: ke, background: Ge },
               })
             ).dataUrl);
-        (de(pe), Kt(!0), B(u("previewReady")));
+        (de(pe), setPreviewOptions(pixelOptions), setWorkspaceDirty(true), B(u("previewReady")));
       }
     } catch (d) {
       Je(String(d));
@@ -13233,7 +13446,7 @@ function PixelSoulStudio() {
   async function Vn(d) {
     const b = ln === "editor" ? Be : se;
     if (!b) {
-      Je(ln === "editor" ? u("chooseEditorImageFirst") : "Generate preview first");
+      Je(ln === "editor" ? u("chooseEditorImageFirst") : u("previewFirst"));
       return;
     }
     if (Ke) return;
@@ -13250,10 +13463,11 @@ function PixelSoulStudio() {
           filters: [{ name: "PNG", extensions: ["png"] }],
         });
       if (typeof ue != "string") return;
-      const mt = await Wn(b, d);
+      const preview = ln === "editor" ? (await renderVisibleEditorLayers()).toDataURL("image/png") : b;
+      const mt = await Wn(preview, d);
       (await Ae("save_data_url", { dataUrl: mt, path: ue }),
         Ee(!1),
-        Kt(!1),
+        ln === "editor" ? Kt(false) : setWorkspaceDirty(false),
         B(u("exportSaved").replace("{scale}", d)),
         Je(u("exportToast").replace("{scale}", d)));
     } catch (pe) {
@@ -13262,16 +13476,38 @@ function PixelSoulStudio() {
       vt(!1);
     }
   }
+  function loadEditorImage(dataUrl) {
+    Se(dataUrl);
+    Ne([]);
+    _e([]);
+    Nt([]);
+    yn(true);
+    xn("base");
+    Xt();
+    Re("pencil");
+    Kt(false);
+    B(u("imageSelected"));
+  }
+
+  function mayReplaceEditorImage() {
+    return !bgBusy && !Ke && (!ct || window.confirm(u("replaceEditorConfirm")));
+  }
+
   function xr() {
-    if (!se) return Je("Generate preview first");
-    (Se(se),
-      Ne([]),
-      _e([]),
-      Nt([]),
-      yn(!0),
-      xn("base"),
-      Xt(),
-      C("Pixel Editor"));
+    if (!se) return Je(u("previewFirst"));
+    if (!mayReplaceEditorImage()) return;
+    loadEditorImage(se);
+    C("Pixel Editor");
+  }
+
+  async function openEditorImage() {
+    if (!mayReplaceEditorImage()) return;
+    try {
+      const path = await ea(imagePicker);
+      if (typeof path === "string") loadEditorImage(await Ae("read_image", { path }));
+    } catch (error) {
+      Je(String(error));
+    }
   }
   function Ct() {
     return dn === "base" ? Be : (Wt.find((d) => d.id === dn)?.dataUrl ?? Be);
@@ -13342,34 +13578,38 @@ function PixelSoulStudio() {
         (Q.src = d));
     });
   }
+  async function renderVisibleEditorLayers() {
+    const base = await Kn(Be);
+    const canvas = document.createElement("canvas");
+    canvas.width = base.width;
+    canvas.height = base.height;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Unable to render the editor canvas");
+    context.imageSmoothingEnabled = false;
+    if (rn) context.drawImage(base, 0, 0);
+    for (const layer of Wt.filter((entry) => entry.visible)) {
+      const image = await Kn(layer.dataUrl);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    }
+    return canvas;
+  }
+
   async function fl() {
-    if (Be)
-      try {
-        const d = await Kn(Be),
-          b = document.createElement("canvas");
-        ((b.width = d.width), (b.height = d.height));
-        const pe = b.getContext("2d");
-        ((pe.imageSmoothingEnabled = !1), rn && pe.drawImage(d, 0, 0));
-        for (const ue of Wt.filter((mt) => mt.visible)) {
-          const mt = await Kn(ue.dataUrl);
-          pe.drawImage(mt, 0, 0, b.width, b.height);
-        }
-        const Q = b.toDataURL("image/png");
-        (de(Q),
-          Se(Q),
-          Nt([]),
-          xn("base"),
-          yn(!0),
-          Ne([]),
-          _e([]),
-          Xt(),
-          Kt(!0),
-          B(
-            `Applied ${Wt.filter((ue) => ue.visible).length + (rn ? 1 : 0)} visible layer(s) to result`,
-          ));
-      } catch (d) {
-        Je(String(d));
-      }
+    if (!Be) return;
+    try {
+      const result = (await renderVisibleEditorLayers()).toDataURL("image/png");
+      Se(result);
+      Nt([]);
+      xn("base");
+      yn(true);
+      Ne([]);
+      _e([]);
+      Xt();
+      Kt(true);
+      B(u("layersApplied"));
+    } catch (error) {
+      Je(String(error));
+    }
   }
   async function wr(d) {
     if (!yt) return;
@@ -13415,23 +13655,23 @@ function PixelSoulStudio() {
     typeof b == "string" &&
       (await Ae("save_data_url", { dataUrl: d.dataUrl, path: b }));
   }
-  function Xn(d) {
-    if (!Zd(d)) return Je(u("unsupportedImage"));
-    const b = new FileReader();
-    ((b.onload = async () => {
-      try {
-        const pe = String(b.result || ""),
-          Q = await Ae("save_clipboard_image", { dataUrl: pe });
-        (L(Q),
-          ne(pe),
-          de(""),
-          D(Q.replace(/\.[^.]+$/, "_snapped.png")),
-          B(u("imageSelected")));
-      } catch (pe) {
-        Je(String(pe));
-      }
-    }),
-      b.readAsDataURL(d));
+  async function Xn(file) {
+    if (!/^image\/(png|jpeg|webp)$/i.test(file.type) && !/\.(png|jpe?g|webp)$/i.test(file.name)) {
+      Je(u("unsupportedImage"));
+      return;
+    }
+    if (Ie || importPending.current) return;
+    importPending.current = true;
+    try {
+      const dataUrl = await fileDataUrl(file);
+      const path = await Ae("save_clipboard_image", { dataUrl });
+      const name = file.name || "image.png";
+      loadWorkspaceImage(path, dataUrl, name, `${name.replace(/\.[^.]+$/, "")}_snapped.png`);
+    } catch (error) {
+      Je(String(error));
+    } finally {
+      importPending.current = false;
+    }
   }
   g.useEffect(() => {
     const d = (b) => {
@@ -13458,58 +13698,28 @@ function PixelSoulStudio() {
         Je(String(d));
       }
   }
-  async function Xl(d) {
-    if (!Zd(d)) return Je(u("unsupportedImage"));
-    const b = new FileReader();
-    ((b.onload = () => {
-      const pe = String(b.result || "");
-      if (!pe) return;
-      const Q = Ct();
-      (Q && Ne((ue) => [...ue, Q].slice(-60)),
-        _e([]),
-        Se(pe),
-        Nt([]),
-        yn(!0),
-        xn("base"),
-        Xt(),
-        Kt(!0),
-        B(
-          o === "zh-Hans" ? "已将剪贴簿图片加载像素编辑器" : o === "zh-Hant" ? "已將剪貼簿圖片載入像素編輯器"
-            : "Clipboard image loaded into Pixel Editor",
-        ));
-    }),
-      b.readAsDataURL(d));
+  async function Xl(file) {
+    if (!Zd(file)) return Je(u("unsupportedImage"));
+    if (!mayReplaceEditorImage()) return;
+    try {
+      loadEditorImage(await fileDataUrl(file));
+    } catch (error) {
+      Je(String(error));
+    }
   }
+
   async function na() {
-    if (Be)
-      try {
-        const d = await Kn(Be),
-          b = document.createElement("canvas");
-        ((b.width = d.width), (b.height = d.height));
-        const pe = b.getContext("2d");
-        if (!pe) throw new Error("Unable to create clipboard canvas");
-        ((pe.imageSmoothingEnabled = !1), rn && pe.drawImage(d, 0, 0));
-        for (const ue of Wt.filter((mt) => mt.visible)) {
-          const mt = await Kn(ue.dataUrl);
-          pe.drawImage(mt, 0, 0, b.width, b.height);
-        }
-        const Q = await new Promise((ue, mt) =>
-          b.toBlob(
-            (Yn) =>
-              Yn ? ue(Yn) : mt(new Error("PNG clipboard export failed")),
-            "image/png",
-          ),
-        );
-        (await navigator.clipboard.write([
-          new ClipboardItem({ "image/png": Q }),
-        ]),
-          Je(
-            o === "zh-Hans" ? "已复制像素编辑器可见图层" : o === "zh-Hant" ? "已複製像素編輯器可見圖層"
-              : "Visible editor layers copied",
-          ));
-      } catch (d) {
-        Je(String(d));
-      }
+    if (!Be) return;
+    try {
+      const canvas = await renderVisibleEditorLayers();
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob((png) => png ? resolve(png) : reject(new Error("PNG clipboard export failed")), "image/png");
+      });
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      Je(u("copyResult"));
+    } catch (error) {
+      Je(String(error));
+    }
   }
   g.useEffect(() => {
     const d = (b) => {
@@ -13536,171 +13746,191 @@ function PixelSoulStudio() {
       }
     );
   }, [h, Be, Wt, rn, o]);
-  const pl = [
-      ["Workspace", bf, u("workspace")],
-      ["Pixel Editor", Of, u("editor")],
-      ["Batch Processing", Cf, u("batch")],
-      [
-        "Pixel Maker",
-        Df,
-        o === "zh-Hans" ? "像素转换" : o === "zh-Hant" ? "像素轉換"
-          : o === "ko"
-            ? "픽셀 변환"
-            : o === "ja"
-              ? "ピクセル変換"
-              : "Pixel Converter",
-      ],
-      ["Settings", Qf, u("settings")],
-    ],
-    Yl = [
-      ["pan", _f, u("pan")],
-      ["pencil", Af, u("pencil")],
-      ["eraser", Pf, u("eraser")],
-      ["picker", Ff, u("colorPicker")],
-      ["object", Vf, u("objectSelect")],
-      ["bgpick", Tf, u("bgPick")],
-    ];
+  const pages = [
+    ["Workspace", bf, u("pixelize"), u("workspaceHelp")],
+    ["Pixel Editor", Of, u("edit"), u("editorHelp")],
+    ["Batch Processing", Cf, u("batchTab"), u("batchFlowHelp")],
+    ["Pixel Maker", Df, u("convert"), u("converterHelp")],
+    ["Settings", Qf, u("settingsTab"), ""],
+  ];
+  const [, , pageTitle, pageHelp] = pages.find(([page]) => page === h);
+  const editorTools = [
+    ["pan", _f, u("pan")],
+    ["pencil", Af, u("pencil")],
+    ["eraser", Pf, u("eraser")],
+    ["picker", Ff, u("colorPicker")],
+    ["object", Vf, u("objectSelect")],
+    ["bgpick", Tf, u("bgPick")],
+  ];
+  const viewOnly = h === "Pixel Maker" || h === "Settings";
+  const canProcess = V !== "fixed" || ce.length > 0;
+  const openLabel = u(Z ? "replaceImage" : "openImage");
+  const editorOpenLabel = u(Be ? "replaceImage" : "openImage");
+  const viewDirty = h === "Pixel Editor" ? ct : h === "Workspace" && workspaceDirty;
+  const viewHasImage = h === "Pixel Editor" ? Be : h === "Workspace" && se;
+  const exportImage = (source) => {
+    Hn(source);
+    Ue(1);
+    Ee(true);
+  };
   return i.jsxs("div", {
-    className:
-      "pixel-soul-ui grid h-full grid-cols-[205px_1fr_330px] grid-rows-[52px_1fr_28px]",
+    className: `pixel-soul-ui studio-shell ${viewOnly ? "studio-full" : ""}`,
     children: [
       i.jsxs("header", {
-        className:
-          "col-span-3 flex items-center gap-3 border-b border-ui-line bg-[#27241f] px-4",
-        children: [
-          i.jsx("div", {
-            className:
-              "grid h-8 w-8 place-items-center rounded-lg bg-ui-accent font-black",
-            children: "P",
-          }),
-          i.jsx("b", { children: "Pixel Soul Studio" }),
-          i.jsx("span", {
-            className: "subtle",
-            children: "Pixel Art Creation Suite",
-          }),
-          i.jsx("span", {
-            className:
-              "ml-auto rounded-full border border-ui-line bg-ui-panel2 px-3 py-1 text-xs text-ui-muted",
-            children: "Version 1.4.0",
-          }),
-        ],
-      }),
-      i.jsx("aside", {
-        className:
-          "flex flex-col gap-1 border-r border-ui-line bg-ui-panel p-3",
-        children: pl.map(([page, Icon, label]) =>
-          i.jsxs("button", {
-            className: `nav ${h === page ? "active" : ""}`,
-            onClick: () => C(page),
-            children: [
-              i.jsx(Icon, { size: 17 }),
-              i.jsx("span", {
-                className: "min-w-0 flex-1 text-left",
-                children: label,
-              }),
-            ],
-          }, page),
-        ),
-      }),
-      i.jsxs("main", {
-        className: `flex min-h-0 flex-col ${h === "Pixel Maker" ? "col-span-2" : ""}`,
+        className: "studio-topbar",
         children: [
           i.jsxs("div", {
-            className:
-              "flex h-[62px] items-center border-b border-ui-line px-4",
+            className: "studio-brand",
+            children: [
+              i.jsx("span", { className: "studio-mark", "aria-hidden": true, children: "P" }),
+              i.jsx("strong", { children: "Pixel Soul Studio" }),
+            ],
+          }),
+          i.jsx("nav", {
+            className: "studio-navigation",
+            children: pages.map(([page, Icon, label]) =>
+              i.jsxs("button", {
+                className: "studio-tab",
+                "aria-current": h === page ? "page" : undefined,
+                onClick: () => C(page),
+                children: [i.jsx(Icon, { size: 16, "aria-hidden": true }), label],
+              }, page),
+            ),
+          }),
+          i.jsx("span", { className: "studio-version", children: "1.4.0" }),
+        ],
+      }),
+      i.jsxs("main", {
+        className: "studio-main",
+        children: [
+          i.jsxs("div", {
+            className: "studio-pagebar",
             children: [
               i.jsxs("div", {
+                className: "studio-page-title",
                 children: [
-                  i.jsx("b", {
-                    children:
-                      h === "Workspace"
-                        ? u("workspace")
-                        : h === "Pixel Editor"
-                          ? u("editor")
-                          : h === "Batch Processing"
-                            ? u("batch")
-                                : h === "Pixel Maker"
-                                  ? o === "zh-Hans" ? "像素转换" : o === "zh-Hant" ? "像素轉換"
-                                    : o === "ko"
-                                      ? "픽셀 변환"
-                                      : o === "ja"
-                                        ? "ピクセル変換"
-                                        : "Pixel Converter"
-                                  : u("settings"),
+                  i.jsx("h1", { children: pageTitle }),
+                  pageHelp && i.jsx("p", { children: pageHelp }),
+                ],
+              }),
+              h === "Workspace" && i.jsxs("div", {
+                className: "studio-actions",
+                children: [
+                  (Z || Ie) && i.jsxs("button", {
+                    className: "btn",
+                    disabled: Ie,
+                    onClick: openWorkspaceImage,
+                    children: [i.jsx(cl, { size: 16, "aria-hidden": true }), openLabel],
                   }),
-                  i.jsx("div", {
-                    className: "subtle",
-                    children: u("canvasHint"),
+                  Z && i.jsx("button", {
+                    className: `btn ${se && !previewNeedsRefresh ? "" : "primary"}`,
+                    disabled: Ie || !canProcess,
+                    onClick: wn,
+                    children: u(Ie ? "processing" : "generate"),
+                  }),
+                  se && i.jsxs(i.Fragment, {
+                    children: [
+                      i.jsx("button", { className: "btn", disabled: Ie || previewNeedsRefresh, onClick: xr, children: u("editResult") }),
+                      i.jsx("button", {
+                        className: "tool studio-icon-action",
+                        title: u("copyResult"), "aria-label": u("copyResult"),
+                        disabled: Ie || previewNeedsRefresh, onClick: Ur, children: i.jsx(Pc, { size: 16, "aria-hidden": true }),
+                      }),
+                      i.jsxs("button", {
+                        className: "btn primary", disabled: Ie || previewNeedsRefresh,
+                        onClick: () => exportImage("workspace"),
+                        children: [i.jsx(ta, { size: 16, "aria-hidden": true }), u("exportImage")],
+                      }),
+                    ],
                   }),
                 ],
               }),
-              h === "Pixel Editor" &&
-                i.jsxs("div", {
-                  className: "ml-auto flex gap-1",
-                  children: [
-                    Yl.map(([d, b, pe]) =>
-                      i.jsx(
-                        "button",
-                        {
-                          title: pe,
-                          className: `tool ${Fe === d ? "active" : ""}`,
-                          onClick: () => Re(d),
-                          children: i.jsx(b, { size: 17 }),
-                        },
-                        d,
-                      ),
-                    ),
-                    i.jsx("input", {
-                      title: u("drawColor"),
-                      type: "color",
-                      value: Me,
-                      onChange: (d) => fe(d.target.value),
-                    }),
-                    i.jsx("button", {
-                      className: "tool",
-                      onClick: Dt,
-                      children: i.jsx(Kf, { size: 17 }),
-                    }),
-                    i.jsx("button", {
-                      className: "tool",
-                      onClick: Or,
-                      children: i.jsx($f, { size: 17 }),
-                    }),
-                    i.jsx("button", {
-                      className: "btn primary",
-                      onClick: fl,
-                      children: u("applyVisibleLayers"),
-                    }),
-                    i.jsx("button", {
-                      className: "btn",
-                      disabled: !Be || Ke,
-                      onClick: () => {
-                        (Hn("editor"), Ue(1), Ee(!0));
-                      },
-                      children: Ke ? u("saving") : u("savePng"),
-                    }),
-                  ],
-                }),
+              h === "Pixel Editor" && Be && i.jsxs("div", {
+                className: "studio-actions",
+                children: [
+                  i.jsxs("button", {
+                    className: "btn",
+                    disabled: bgBusy || Ke, onClick: openEditorImage,
+                    children: [i.jsx(cl, { size: 16, "aria-hidden": true }), editorOpenLabel],
+                  }),
+                  i.jsxs("button", {
+                    className: "btn primary",
+                    disabled: Ke || bgBusy,
+                    onClick: () => exportImage("editor"),
+                    children: [i.jsx(ta, { size: 16, "aria-hidden": true }), u("exportImage")],
+                  }),
+                ],
+              }),
+              h === "Batch Processing" && F && i.jsx("button", {
+                className: "btn primary",
+                disabled: Ie || !q || !canProcess,
+                onClick: wn,
+                children: Ie ? `${u("processing")} ${le}/${H}` : u("runBatch"),
+              }),
+            ],
+          }),
+          h === "Pixel Editor" && i.jsxs("div", {
+            className: "editor-toolstrip",
+            children: [
+              i.jsx("div", {
+                className: "editor-toolgroup",
+                children: editorTools.map(([tool, Icon, label]) =>
+                  i.jsx("button", {
+                    className: `tool ${Fe === tool ? "active" : ""}`,
+                    title: label, "aria-label": label, "aria-pressed": Fe === tool,
+                    disabled: !Be, onClick: () => Re(tool),
+                    children: i.jsx(Icon, { size: 17, "aria-hidden": true }),
+                  }, tool),
+                ),
+              }),
+              i.jsx("input", {
+                className: "editor-color",
+                title: u("drawColor"), "aria-label": u("drawColor"),
+                type: "color", value: Me, disabled: !Be,
+                onChange: (event) => fe(event.target.value),
+              }),
+              i.jsxs("div", {
+                className: "editor-toolgroup editor-history",
+                children: [
+                  i.jsx("button", {
+                    className: "tool", title: u("undoAction"), "aria-label": u("undoAction"),
+                    disabled: !ge.length || bgBusy, onClick: Dt,
+                    children: i.jsx(Kf, { size: 17, "aria-hidden": true }),
+                  }),
+                  i.jsx("button", {
+                    className: "tool", title: u("redoAction"), "aria-label": u("redoAction"),
+                    disabled: !je.length || bgBusy, onClick: Or,
+                    children: i.jsx($f, { size: 17, "aria-hidden": true }),
+                  }),
+                ],
+              }),
+              Be && Wt.length > 0 && i.jsx("button", {
+                className: "btn editor-merge",
+                disabled: bgBusy, onClick: fl, children: u("mergeLayers"),
+              }),
             ],
           }),
           i.jsx("div", {
-            className: "grid min-h-0 flex-1 p-3",
+            className: `studio-content ${h === "Batch Processing" || h === "Settings" ? "studio-scroll" : ""}`,
             children:
               h === "Workspace"
                 ? i.jsxs("div", {
-                    className: "grid min-h-0 grid-cols-2 gap-3",
+                    className: "studio-canvases",
                     children: [
                       i.jsx(Kl, {
                         documentId: `original:${z}`,
                         src: Z,
                         title: u("canvasOriginal"),
                         onImageFile: Xn,
+                        onOpenImage: openWorkspaceImage,
+                        openLabel,
                         language: o,
                       }),
                       i.jsx(Kl, {
                         documentId: `processed:${z}`,
                         src: se,
                         title: u("canvasProcessed"),
+                        emptyHint: u("emptyResult"),
                         language: o,
                       }),
                     ],
@@ -13711,6 +13941,8 @@ function PixelSoulStudio() {
                       src: Be,
                       title: u("canvasEditor"),
                       onImageFile: Xl,
+                      onOpenImage: openEditorImage,
+                      openLabel: editorOpenLabel,
                       language: o,
                       editable: !0,
                       tool: Fe,
@@ -13732,30 +13964,61 @@ function PixelSoulStudio() {
                       onBgPick: (d, b) => Tt(!1, d, b),
                     })
                   : h === "Batch Processing"
-                    ? i.jsxs("div", {
-                        className: "card p-6",
+                    ? i.jsxs("section", {
+                        className: "batch-flow",
                         children: [
-                          i.jsx("h2", { children: u("batch") }),
-                          i.jsx("p", {
-                            className: "subtle",
-                            children: u("batchHelp"),
-                          }),
                           i.jsxs("div", {
-                            className:
-                              "mt-5 rounded-xl border border-ui-line bg-ui-panel2 p-4",
+                            className: "batch-folders",
                             children: [
-                              i.jsx("div", {
-                                className: "section-title",
-                                children: u("inputFolder"),
+                              i.jsxs("section", {
+                                className: "batch-folder",
+                                children: [
+                                  i.jsx("h2", { children: u("sourceFolder") }),
+                                  i.jsx("span", { className: "batch-path", title: F, children: F || u("noFolder") }),
+                                  i.jsxs("button", {
+                                    className: `btn ${F ? "" : "primary"}`, onClick: yr, disabled: Ie,
+                                    children: [i.jsx(cl, { size: 16, "aria-hidden": true }), u("chooseInputFolder")],
+                                  }),
+                                ],
                               }),
-                              i.jsx("p", {
-                                className: "subtle mt-2 break-all",
-                                children: F || u("noFolder"),
+                              i.jsxs("section", {
+                                className: "batch-folder",
+                                children: [
+                                  i.jsx("label", { htmlFor: "batch-output", children: u("destinationFolder") }),
+                                  i.jsx("input", {
+                                    id: "batch-output",
+                                    className: "field", disabled: Ie, value: q, title: q,
+                                    placeholder: u("chooseOutput"),
+                                    onChange: (event) => { X(event.target.value); te(false); },
+                                  }),
+                                  i.jsxs("button", {
+                                    className: "btn", onClick: Dr, disabled: Ie,
+                                    children: [i.jsx(cl, { size: 16, "aria-hidden": true }), u("chooseOutput")],
+                                  }),
+                                ],
                               }),
-                              i.jsx("p", {
-                                className: "subtle mt-3",
-                                children: u("batchPanelHelp"),
-                              }),
+                            ],
+                          }),
+                          F && i.jsxs("section", {
+                            className: "batch-queue",
+                            children: [
+                              i.jsxs("h2", { children: [u("batchImages"), " · ", batchFiles.length] }),
+                              batchFiles.length === 0
+                                ? i.jsx("p", { children: u("noImagesFound") })
+                                : i.jsx("ul", {
+                                    children: batchFiles.slice(0, 40).map((path) =>
+                                      i.jsx("li", { title: path, children: path.split(/[\\/]/).at(-1) }, path),
+                                    ),
+                                  }),
+                              batchFiles.length > 40 && i.jsx("p", { children: `+ ${batchFiles.length - 40}` }),
+                            ],
+                          }),
+                          (Ie || H > 0) && i.jsxs("section", {
+                            className: "batch-progress",
+                            children: [
+                              i.jsxs("label", { htmlFor: "batch-progress", children: [u("batchProgress"), " · ", le, " / ", H] }),
+                              i.jsx("progress", { id: "batch-progress", max: H || 1, value: le }),
+                              xe && i.jsx("button", { className: "btn", onClick: Tr, children: u("openOutputFolder") }),
                             ],
                           }),
                         ],
@@ -13768,18 +14031,6 @@ function PixelSoulStudio() {
                                 className:
                                   "mx-auto grid max-w-5xl grid-cols-1 gap-4 lg:grid-cols-2",
                                 children: [
-                                  i.jsxs("div", {
-                                    className: "card p-6 lg:col-span-2",
-                                    children: [
-                                      i.jsx("h2", {
-                                        children: u("appSettings"),
-                                      }),
-                                      i.jsx("p", {
-                                        className: "subtle mt-2",
-                                        children: u("appSettingsHelp"),
-                                      }),
-                                    ],
-                                  }),
                                   i.jsxs("div", {
                                     className: "card p-5",
                                     children: [
@@ -13918,13 +14169,20 @@ function PixelSoulStudio() {
           }),
         ],
       }),
-      i.jsx("aside", {
-        className: `overflow-auto border-l border-ui-line bg-ui-panel p-4 ${h === "Pixel Maker" ? "hidden" : ""}`,
+      !viewOnly && i.jsx("aside", {
+        className: "studio-inspector",
         children:
-          h === "Pixel Editor"
+          h === "Pixel Editor" && !Be
             ? i.jsxs(i.Fragment, {
                 children: [
-                  i.jsx("b", { children: u("editorProperties") }),
+                  i.jsx("h2", { className: "inspector-heading", children: u("editorProperties") }),
+                  i.jsx("p", { className: "subtle mt-2", children: u("importFirst") }),
+                ],
+              })
+          : h === "Pixel Editor"
+            ? i.jsxs(i.Fragment, {
+                children: [
+                  i.jsx("h2", { className: "inspector-heading", children: u("editorProperties") }),
                   i.jsxs("div", {
                     className: "card mt-4 p-3",
                     children: [
@@ -13967,13 +14225,13 @@ function PixelSoulStudio() {
                     }),
                   i.jsx(Jf, {
                     baseVisible: rn,
-                    setBaseVisible: yn,
+                    setBaseVisible: (visible) => { yn(visible); Kt(true); },
                     activeLayerId: dn,
                     setActiveLayerId: (d) => {
                       (xn(d), Ne([]), _e([]), Xt());
                     },
                     layers: Wt,
-                    setLayers: Nt,
+                    setLayers: (layers) => { Nt(layers); Kt(true); },
                     exportLayer: Fr,
                     labels: {
                       layers: u("layers"),
@@ -14171,19 +14429,8 @@ function PixelSoulStudio() {
             : h === "Workspace"
               ? i.jsxs(i.Fragment, {
                   children: [
-                    i.jsx("b", { children: u("processingSettings") }),
-                    i.jsx("p", {
-                      className: "subtle mt-1",
-                      children: u("singleProcessing"),
-                    }),
-                    i.jsxs("button", {
-                      className: "btn mt-4 w-full",
-                      onClick: yr,
-                      children: [
-                        i.jsx(cl, { className: "mr-2 inline", size: 15 }),
-                        u("chooseImage"),
-                      ],
-                    }),
+                    i.jsx("h2", { className: "inspector-heading", children: u("pixelSettings") }),
+                    sourceName && i.jsx("p", { className: "inspector-source", title: sourceName, children: sourceName }),
                     i.jsxs("div", {
                       className: "label",
                       children: [
@@ -14195,6 +14442,7 @@ function PixelSoulStudio() {
                     i.jsx("input", {
                       className: "w-full accent-ui-accent",
                       type: "range",
+                      "aria-label": u("colorCount"),
                       min: "2",
                       max: "256",
                       value: oe,
@@ -14205,7 +14453,7 @@ function PixelSoulStudio() {
                       children: [
                         u("pixelSize"),
                         " ",
-                        i.jsx("span", { children: at ? "Auto" : jt }),
+                        i.jsx("span", { children: at ? u("pixelAuto") : jt }),
                       ],
                     }),
                     i.jsxs("div", {
@@ -14214,12 +14462,12 @@ function PixelSoulStudio() {
                         i.jsx("button", {
                           className: at ? "active" : "",
                           onClick: () => St(!0),
-                          children: "Auto",
+                          children: u("pixelAuto"),
                         }),
                         i.jsx("button", {
                           className: at ? "" : "active",
                           onClick: () => St(!1),
-                          children: "Manual",
+                          children: u("pixelManual"),
                         }),
                       ],
                     }),
@@ -14227,6 +14475,7 @@ function PixelSoulStudio() {
                       i.jsx("input", {
                         className: "field mt-2",
                         type: "number",
+                        "aria-label": u("pixelSize"),
                         value: jt,
                         onChange: (d) => nn(+d.target.value),
                       }),
@@ -14264,9 +14513,10 @@ function PixelSoulStudio() {
                           }),
                       ],
                     }),
-                    i.jsxs("div", {
-                      className: "card mt-4 p-3",
+                    i.jsxs("details", {
+                      className: "inspector-disclosure",
                       children: [
+                        i.jsx("summary", { children: u("advancedOutput") }),
                         i.jsx("div", {
                           className: "section-title",
                           children:
@@ -14395,64 +14645,21 @@ function PixelSoulStudio() {
                               }),
                             ],
                           }),
+                        Z && i.jsxs("label", {
+                          className: "studio-field",
+                          children: [
+                            u("defaultExportPath"),
+                            i.jsx("input", { className: "field", value: _, onChange: (event) => D(event.target.value) }),
+                          ],
+                        }),
                       ],
-                    }),
-                    i.jsx("div", { className: "label", children: u("output") }),
-                    i.jsx("input", {
-                      className: "field",
-                      value: _,
-                      onChange: (d) => D(d.target.value),
-                    }),
-                    i.jsx("button", {
-                      className: "btn primary mt-4 w-full",
-                      disabled: Ie || !z || (V === "fixed" && ce.length === 0),
-                      onClick: wn,
-                      children: u(Ie ? "processing" : "generate"),
-                    }),
-                    i.jsxs("button", {
-                      className: "btn mt-2 w-full",
-                      disabled: !se,
-                      onClick: () => {
-                        (Hn("workspace"), Ue(4), Ee(!0));
-                      },
-                      children: [
-                        i.jsx(Wf, { className: "mr-2 inline", size: 15 }),
-                        u("saveResult"),
-                      ],
-                    }),
-                    i.jsxs("button", {
-                      className: "btn mt-2 w-full",
-                      disabled: !se,
-                      onClick: Ur,
-                      children: [
-                        i.jsx(Pc, { className: "mr-2 inline", size: 15 }),
-                        o === "zh-Hans" ? "复制结果" : o === "zh-Hant" ? "複製結果" : "Copy Result",
-                      ],
-                    }),
-                    i.jsx("button", {
-                      className: "btn mt-2 w-full",
-                      disabled: !se,
-                      onClick: xr,
-                      children: u("sendEditor"),
                     }),
                   ],
                 })
               : h === "Batch Processing"
                 ? i.jsxs(i.Fragment, {
                     children: [
-                      i.jsx("b", { children: u("batchSettings") }),
-                      i.jsx("p", {
-                        className: "subtle mt-1",
-                        children: u("folderOnly"),
-                      }),
-                      i.jsxs("button", {
-                        className: "btn mt-4 w-full",
-                        onClick: yr,
-                        children: [
-                          i.jsx(cl, { className: "mr-2 inline", size: 15 }),
-                          u("chooseInputFolder"),
-                        ],
-                      }),
+                      i.jsx("h2", { className: "inspector-heading", children: u("batchSettings") }),
                       i.jsxs("div", {
                         className: "label",
                         children: [
@@ -14464,6 +14671,7 @@ function PixelSoulStudio() {
                       i.jsx("input", {
                         className: "w-full accent-ui-accent",
                         type: "range",
+                        "aria-label": u("colorCount"),
                         min: "2",
                         max: "256",
                         value: oe,
@@ -14474,7 +14682,7 @@ function PixelSoulStudio() {
                         children: [
                           u("pixelSize"),
                           " ",
-                          i.jsx("span", { children: at ? "Auto" : jt }),
+                          i.jsx("span", { children: at ? u("pixelAuto") : jt }),
                         ],
                       }),
                       i.jsxs("div", {
@@ -14483,12 +14691,12 @@ function PixelSoulStudio() {
                           i.jsx("button", {
                             className: at ? "active" : "",
                             onClick: () => St(!0),
-                            children: "Auto",
+                            children: u("pixelAuto"),
                           }),
                           i.jsx("button", {
                             className: at ? "" : "active",
                             onClick: () => St(!1),
-                            children: "Manual",
+                            children: u("pixelManual"),
                           }),
                         ],
                       }),
@@ -14496,6 +14704,7 @@ function PixelSoulStudio() {
                         i.jsx("input", {
                           className: "field mt-2",
                           type: "number",
+                          "aria-label": u("pixelSize"),
                           value: jt,
                           onChange: (d) => nn(+d.target.value),
                         }),
@@ -14670,27 +14879,6 @@ function PixelSoulStudio() {
                       }),
                       i.jsx("div", {
                         className: "label",
-                        children: u("outputFolder"),
-                      }),
-                      i.jsxs("div", {
-                        className: "grid grid-cols-[1fr_auto] gap-2",
-                        children: [
-                          i.jsx("input", {
-                            className: "field min-w-0",
-                            value: q,
-                            onChange: (d) => X(d.target.value),
-                            placeholder: u("chooseOutput"),
-                          }),
-                          i.jsx("button", {
-                            className: "btn px-3",
-                            onClick: Dr,
-                            title: u("chooseOutput"),
-                            children: i.jsx(cl, { size: 16 }),
-                          }),
-                        ],
-                      }),
-                      i.jsx("div", {
-                        className: "label",
                         children: u("exportScale"),
                       }),
                       i.jsx("div", {
@@ -14710,115 +14898,21 @@ function PixelSoulStudio() {
                           ),
                         ),
                       }),
-                      (Ie || H > 0) &&
-                        i.jsxs("div", {
-                          className: "card mt-4 p-3",
-                          children: [
-                            i.jsxs("div", {
-                              className:
-                                "flex items-center justify-between text-xs",
-                              children: [
-                                i.jsx("span", { children: u("batchProgress") }),
-                                i.jsxs("b", {
-                                  children: [
-                                    H ? Math.round((le / H) * 100) : 0,
-                                    "%",
-                                  ],
-                                }),
-                              ],
-                            }),
-                            i.jsx("div", {
-                              className:
-                                "mt-3 h-2 overflow-hidden rounded-full bg-ui-panel2",
-                              children: i.jsx("div", {
-                                className:
-                                  "h-full rounded-full bg-ui-accent transition-all duration-200",
-                                style: { width: `${H ? (le / H) * 100 : 0}%` },
-                              }),
-                            }),
-                            i.jsxs("div", {
-                              className: "mt-2 text-[10px] text-ui-muted",
-                              children: [le, " / ", H],
-                            }),
-                          ],
-                        }),
-                      i.jsx("button", {
-                        className: "btn primary mt-4 w-full",
-                        disabled:
-                          Ie || !F || !q || (V === "fixed" && ce.length === 0),
-                        onClick: wn,
-                        children: Ie
-                          ? `${u("processing")} ${le}/${H}`
-                          : u("runBatch"),
-                      }),
-                      xe &&
-                        i.jsxs("button", {
-                          className: "btn mt-2 w-full",
-                          onClick: Tr,
-                          children: [
-                            i.jsx(cl, { className: "mr-2 inline", size: 15 }),
-                            u("openOutputFolder"),
-                          ],
-                        }),
                     ],
                   })
-                : i.jsxs(i.Fragment, {
-                    children: [
-                      i.jsx("b", { children: u("application") }),
-                      i.jsxs("div", {
-                        className: "card mt-4 p-3",
-                        children: [
-                          i.jsx("div", {
-                            className: "section-title",
-                            children: "Pixel Soul Studio",
-                          }),
-                          i.jsxs("div", {
-                            className: "label",
-                            children: [
-                              u("version"),
-                              " ",
-                              i.jsx("span", { children: "1.4.0" }),
-                            ],
-                          }),
-                          i.jsx("p", {
-                            className: "subtle mt-2",
-                            children: "Pixel Art Creation Suite",
-                          }),
-                        ],
-                      }),
-                      i.jsxs("div", {
-                        className: "card mt-3 p-3",
-                        children: [
-                          i.jsx("div", {
-                            className: "section-title",
-                            children: u("language"),
-                          }),
-                          i.jsxs("div", {
-                            className:
-                              "mt-2 flex items-center justify-between text-xs",
-                            children: [
-                              i.jsx("span", {
-                                className: "text-ui-muted",
-                                children: u("status"),
-                              }),
-                              i.jsx("b", { children: Os[o] }),
-                            ],
-                          }),
-                        ],
-                      }),
-                    ],
-                  }),
+                : null,
       }),
       i.jsxs("footer", {
-        className:
-          "col-span-3 flex items-center border-t border-ui-line bg-[#27241f] px-4 text-[10px] text-ui-muted",
+        className: "studio-status",
+        role: "status",
         children: [
           i.jsx("span", {
-            children: P === "Engine ready" ? u("engineReady") : P,
+            children: h === "Workspace" && previewNeedsRefresh
+              ? u("refreshPreview") : P === "Engine ready" ? u("engineReady") : P,
           }),
-          i.jsx("span", {
-            className: "ml-auto",
-            children: ct ? `● ${u("unsaved")}` : u("saved"),
+          viewHasImage && i.jsx("span", {
+            className: viewDirty ? "studio-dirty" : "",
+            children: viewDirty ? u("unsaved") : u("noUnsavedEdits"),
           }),
         ],
       }),
