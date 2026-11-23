@@ -1,0 +1,36 @@
+[package]
+name = "pixel-soul-studio-native"
+version = "1.4.0"
+description = "Pixel art editing and image processing for Windows"
+authors = ["Pixel Soul Studio contributors"]
+edition = "2021"
+license = "0BSD"
+
+[lib]
+name = "pixel_soul_studio_native_lib"
+crate-type = ["rlib"]
+
+[[bin]]
+name = "PixelSoulStudio"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+base64 = "0.22"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+spritefusion-pixel-snapper = { path = "../third_party/spritefusion-pixel-snapper" }
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1

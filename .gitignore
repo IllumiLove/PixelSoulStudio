@@ -1,0 +1,11 @@
+/desktop/target/
+/desktop/gen/
+/third_party/spritefusion-pixel-snapper/target/
+/dist/
+*.exe
+*.pdb
+*.log
+.env
+.env.*
+.DS_Store
+Thumbs.db
