@@ -2,7 +2,7 @@
 
 **在 Windows 上離線製作像素美術。** 匯入圖片，並排比較像素化前後，再用編輯器修圖、去背，或直接匯出 PNG。
 
-[綠色版下載](#下載綠色版) · [功能導覽](#功能導覽) · [自行建置](#開發與建置)
+[綠色版下載](#下載綠色版) · [功能導覽](#功能導覽) · [自行建置](#開發與建置) · [提交貢獻](#提交貢獻)
 
 ![Pixel Soul Studio v1.4.0 的像素化工作區，並排顯示暮色提燈原圖與處理結果](docs/images/workspace.png)
 
@@ -24,7 +24,7 @@
 
 ## 下載綠色版
 
-Windows x64 綠色版會放在 [GitHub Releases](https://github.com/IllumiLove/PixelSoulStudio/releases)。下載 `PixelSoulStudio-Windows-x64.exe` 後，在 Windows 10 或 11 直接執行。若電腦缺少 WebView2 Runtime，可由 [Microsoft](https://developer.microsoft.com/microsoft-edge/webview2/#download) 安裝。
+從 [GitHub Releases](https://github.com/IllumiLove/PixelSoulStudio/releases/latest) 的 **Assets** 下載 `PixelSoulStudio-Windows-x64.exe`，在 Windows 10 或 11（x64）直接執行。若電腦缺少 WebView2 Runtime，可由 [Microsoft](https://developer.microsoft.com/microsoft-edge/webview2/#download) 安裝。
 
 ## 開發與建置
 
@@ -37,6 +37,16 @@ cargo run --locked --manifest-path desktop/Cargo.toml
 ```
 
 執行 `pwsh -File scripts/build-portable.ps1` 可在 `dist/` 產生單檔 EXE。`frontend/` 放的是桌面程式直接載入的 HTML、CSS 與 JavaScript，`desktop/` 是 Tauri 2 和 Rust 圖片處理介面，`third_party/` 保留內建的像素處理核心。
+
+## 提交貢獻
+
+遇到問題或有功能建議，可以先開 [Issue](https://github.com/IllumiLove/PixelSoulStudio/issues)。回報問題時，請附版本、重現步驟和預期結果。
+
+1. Fork 這個倉庫，從你的 Fork 開一個分支。
+2. 完成修改後，依上方「開發與建置」執行相關檢查。若有介面變更，可附上畫面。
+3. 開啟 Pull Request，將目標選為 `IllumiLove/PixelSoulStudio` 的 `main`。說明改了什麼，以及你如何驗證。
+
+`main` 的變更一律透過 Pull Request。至少一位具寫入權限的審核者核准後才能合併。
 
 ## 授權
 
