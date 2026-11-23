@@ -6,6 +6,13 @@ Pixel Soul Studio 是 Windows 上的本機像素美術工具，支援圖片像�
 
 從 [GitHub Releases](https://github.com/IllumiLove/PixelSoulStudio/releases/latest) 下載 `PixelSoulStudio-Windows-x64.exe`，在 Windows 10 或 11（x64）直接執行。程式可離線使用。若電腦缺少 WebView2 Runtime，可由 [Microsoft](https://developer.microsoft.com/microsoft-edge/webview2/#download) 安裝。
 
+## 使用方式
+
+- **像素化**：開啟或拖入 PNG、JPG、WebP，調整像素尺寸與調色盤，按「生成預覽」比較原圖和結果。接著點「編輯結果」，或直接匯出 PNG。
+- **像素編輯**：開啟圖片或接續編輯像素化結果。可以繪圖、去背、調整圖層，或用復原與重做修正操作。匯出 PNG 時會合成可見圖層。
+- **批次處理**：選擇來源與輸出資料夾，確認待處理檔案，再設定共同的像素化參數和輸出倍率。處理進度顯示在同一頁。
+- **尺寸與色彩轉換**：設定尺寸、適配方式、色深與調色盤，畫布會即時更新預覽，可從上方匯出 PNG。
+
 ## 開發與建置
 
 需要 Windows x64、Rust MSVC 工具鏈、Visual Studio Build Tools 的「使用 C++ 的桌面開發」工作負載、WebView2 Runtime、PowerShell 7 與 Node.js 20 以上。
